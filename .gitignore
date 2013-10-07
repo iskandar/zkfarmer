@@ -1,2 +1,8 @@
 *.pyc
+<<<<<<< HEAD
 .idea
+=======
+/.tox
+/*.egg
+/zkfarmer.egg-info
+>>>>>>> 88514e87b24aacabf0589bf08716bc84c98a5c7f

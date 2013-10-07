@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 import unittest
 import tempfile
 import shutil
@@ -12,8 +14,14 @@ from zkfarmer import conf
 
 class TempDirectoryTestCase(unittest.TestCase):
 
+    def _compat_assertIn(self, a, b):
+        # Python 2.6 compat
+        self.assertTrue(a in b)
+
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
+        if not hasattr(self, "assertIn"):
+            self.assertIn = self._compat_assertIn
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
 
@@ -21,13 +29,11 @@ class TestConf(unittest.TestCase):
 
     def test_bad_format(self):
         """Check if we get the right exception if we specify a bad format."""
-        with self.assertRaises(ValueError):
-            conf.Conf("dunno.txt", "inexistant")
+        self.assertRaises(ValueError, conf.Conf, "dunno.txt", "inexistant")
 
     def test_bad_extension(self):
         """Check we get the right exception if we specify a bad extension."""
-        with self.assertRaises(ValueError):
-            conf.Conf("dunno.dunno")
+        self.assertRaises(ValueError, conf.Conf, "dunno.dunno")
 
 class TestConfJSON(TempDirectoryTestCase):
 
@@ -64,6 +70,14 @@ class TestConfJSON(TempDirectoryTestCase):
             json.dump({1: "cc"}, f)
         a = conf.Conf(name)
         self.assertEqual(a.read(), {"1": "cc"})
+
+    def test_json_read_utf8(self):
+        """Check we can read an UTF-8 encoded JSON file."""
+        name = "%s/test.json" % self.tmpdir
+        with open(name, "w") as f:
+            f.write('["😍", 123]')
+        a = conf.Conf(name)
+        self.assertEqual(a.read(), ['😍'.decode('utf-8'), 123])
 
     def test_json_read_not_exist(self):
         """Check we get `None` when asking for an inexistant file."""
@@ -203,8 +217,7 @@ class TestConfPHP(TempDirectoryTestCase):
     def test_php_read(self):
         """Check we can't read PHP"""
         name = "%s/test.php" % self.tmpdir
-        with self.assertRaises(NotImplementedError):
-            conf.Conf(name).read()
+        self.assertRaises(NotImplementedError, conf.Conf(name).read)
 
     def test_php_no_overwrite_on_failure(self):
         """Check we don't overwrite an existing file in case of failure."""
@@ -214,6 +227,33 @@ class TestConfPHP(TempDirectoryTestCase):
         # Write something invalid
         self.assertRaises(TypeError, a.write, json)
         self.assertEqual(a.read(), {"1": "2"})
+
+    def test_php_write_list(self):
+        """Check we can write a list correctly."""
+        name = "%s/test.php" % self.tmpdir
+        a = conf.Conf(name, "php")
+        a.write({"something": [1,2,3]})
+        with open(name) as f:
+            self.assertIn('array(1,2,3)', f.read())
+
+    def test_php_write_boolean(self):
+        """Check we can handle booleans."""
+        name = "%s/test.php" % self.tmpdir
+        a = conf.Conf(name, "php")
+        a.write({"something": True, "somethingelse": False})
+        with open(name) as f:
+            self.assertIn('true', f.read())
+        with open(name) as f:
+            self.assertIn('false', f.read())
+
+    def test_php_utf8_encoded(self):
+        """Check we get UTF-8 encoded output."""
+        name = "%s/test.php" % self.tmpdir
+        a = conf.Conf(name, "php")
+        a.write(["ascii", "😍".decode("utf-8")])
+        with open(name) as f:
+            result = f.read()
+            self.assertIn('"\xf0\x9f\x98\x8d"', result)
 
 class TestConfDir(TempDirectoryTestCase):
 
