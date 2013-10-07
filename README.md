@@ -58,6 +58,7 @@ Usage for the `zkfarmer join` command:
 
     optional arguments:
       -h, --help            show this help message and exit
+      -i, --host-id         a host 'id' to use as the Zookeeper node name. Defaults to the result of the `ip()` system call.
       -f {json,yaml,php,dir}, --format {json,yaml,php,dir}
                             set the configuration format
 
@@ -156,14 +157,14 @@ You can explore the status of hosts in a farm:
 
 To dump sub-fields, use dotted notation (ex: mysql.replication_delay).
 
-### Retrieve an host field
+### Retrieve a host field
 
 The `zkfarm get` can return the value of a given field for a host:
 
     $ zkfarmer get /services/db/1.2.3.4 enabled
     0
 
-### Edit an host field
+### Edit a host field
 
 You can also change the value of field for a given host from anywhere on your network like this:
 
@@ -214,6 +215,19 @@ Usage for the `zkfarmer set` command:
       zknode      the ZooKeeper node path to the farm or node
       field       the path of the field to set
       value       the new value
+
+    optional arguments:
+      -h, --help  show this help message and exit
+
+Usage for the `zkfarmer set-from-file` command:
+
+    usage: zkfarmer set-from-file [-h] zknode path/to/file
+
+    Set the value of a field of a given node or farm.
+
+    positional arguments:
+      zknode      the ZooKeeper node path to the farm or node
+      path        the path of the file to use as the node's content
 
     optional arguments:
       -h, --help  show this help message and exit

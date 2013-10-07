@@ -7,6 +7,7 @@
 
 from .utils import serialize, unserialize, dict_set_path, dict_filter, create_filter
 from .watcher import ZkFarmJoiner, ZkFarmExporter
+import json
 
 from kazoo.client import OPEN_ACL_UNSAFE
 from kazoo.exceptions import NoNodeError, BadVersionError
@@ -20,7 +21,7 @@ class ZkFarmer(object):
     def __init__(self, zkconn):
         self.zkconn = zkconn
 
-    def join(self, zknode, conf):
+    def join(self, zknode, conf, host_id):
         # Create farms ZkNode if doesn't already exists
         self.zkconn.retry(self.zkconn.ensure_path, zknode, acl=OPEN_ACL_UNSAFE)
         # If we are going to enlarged the farm max seen size, store it
@@ -28,7 +29,7 @@ class ZkFarmer(object):
         if current_size > self.get(zknode, 'size'):
             self.set(zknode, 'size', current_size)
         # Join the farm
-        ZkFarmJoiner(self.zkconn, zknode, conf).loop(ignore_unknown_transitions=True)
+        ZkFarmJoiner(self.zkconn, zknode, conf, host_id).loop(ignore_unknown_transitions=True)
 
     def export(self, zknode, conf, updated_handler=None, filters=None):
         ZkFarmExporter(self.zkconn, zknode, conf,
@@ -63,6 +64,12 @@ class ZkFarmer(object):
         data = self.zkconn.get(zknode)
         info = unserialize(data[0])
         dict_set_path(info, field, value)
+        self._save_safe(zknode, info, data)
+
+    def set_from_file(self, zknode, file):
+        data = self.zkconn.get(zknode)
+        with open(file) as data_file:
+            info = json.load(data_file)
         self._save_safe(zknode, info, data)
 
     def unset(self, zknode, field):

@@ -208,10 +208,14 @@ class ZkFarmJoiner(ZkFarmWatcher):
                "connection recovered":   [("lost",      "observer ready"),
                                           ("observer ready", "observer ready")]}
 
-    def __init__(self, zkconn, root_node_path, conf):
+    def __init__(self, zkconn, root_node_path, conf, host_id):
         super(ZkFarmJoiner, self).__init__(zkconn)
-        self.node_path = "%s/%s" % (root_node_path, ip())
+        if host_id is None:
+            host_id = ip()
+        logger.debug("Using host_id %s" % host_id)
+        self.node_path = "%s/%s" % (root_node_path, host_id)
         self.conf = conf
+        self.host_id = host_id
 
         self.event("initial setup")
 
@@ -228,6 +232,7 @@ class ZkFarmJoiner(ZkFarmWatcher):
         # Force the hostname info key
         info = self.conf.read()
         info['hostname'] = gethostname()
+        info['host_id'] = self.host_id
         self.conf.write(info)
         self.mzxid = None
 
@@ -289,5 +294,5 @@ class ZkFarmJoiner(ZkFarmWatcher):
             logger.warn("not able to watch for node %s: not exist anymore" % self.node_path)
 
     def dispatch(self, event):
-        """A local change has occured"""
+        """A local change has occurred"""
         self.event("local modified")
