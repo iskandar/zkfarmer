@@ -126,12 +126,13 @@ class ZkFarmExporter(ZkFarmWatcher):
                                           ("idle",      "initial"),
                                           ("initial",   "initial")] }
 
-    def __init__(self, zkconn, root_node_path, conf, updated_handler=None, filter_handler=None):
+    def __init__(self, zkconn, root_node_path, conf, updated_handler=None, filter_handler=None, run_once=False):
         super(ZkFarmExporter, self).__init__(zkconn)
         self.root_node_path = root_node_path
         self.conf = conf
         self.updated_handler = updated_handler
         self.filter_handler = filter_handler
+        self.run_once = run_once
 
         self.event("initial setup")
 
@@ -148,7 +149,7 @@ class ZkFarmExporter(ZkFarmWatcher):
 
     def exec_connection_recovered(self):
         """The connection is reestablished"""
-        logger.info("Connnection with Zookeeper reestablished")
+        logger.info("Connection with Zookeeper re-established")
         self.event("initial setup")
 
     def exec_initial_setup(self):
@@ -180,6 +181,8 @@ class ZkFarmExporter(ZkFarmWatcher):
         self.conf.write(new_conf)
         if self.updated_handler:
             self.updated_handler()
+        if self.run_once:
+            exit()
 
     def exec_node_modified(self, what):
         """A change has occurred inside the node"""
@@ -230,9 +233,9 @@ class ZkFarmJoiner(ZkFarmWatcher):
 
     def exec_initial_setup(self):
         """Non-zookeeper related initial setup"""
-        # Force the hostname info key
         info = self.conf.read() or {}
         if not self.common:
+            # Force the hostname info key
             info['hostname'] = gethostname()
             info['host_id'] = self.host_id
         self.conf.write(info)
@@ -265,6 +268,7 @@ class ZkFarmJoiner(ZkFarmWatcher):
         # Setup the watcher
         self.zkconn.get(self.node_path, self.watch_node)
         self.monitored = True
+
     def exec_initial_znode_setup_from_idle(self):
         # This may happen because we recovered the connection several times
         pass

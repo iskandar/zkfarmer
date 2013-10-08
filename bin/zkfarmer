@@ -64,6 +64,8 @@ def main():
     subparser.add_argument('-F', '--filters', dest='filters',
                            help='filter out nodes which doesn\'t match supplied predicates separeted by commas ' +
                                 '(ex: enabled=0,replication_delay<10,!maintenance)')
+    subparser.add_argument('-x', '--exit', dest='run_once', action="store_true",
+                           help='exit after the first update')
 
     # The `ls' sub-command
     subparser = subparsers.add_parser('ls', help='get the list of nodes', description='Get the list of nodes.')
@@ -191,7 +193,7 @@ def main():
         def updated_handler():
             if args.changed_cmd:
                 os.system(args.changed_cmd)
-        farmer.export(args.zknode, conf, updated_handler, args.filters)
+        farmer.export(args.zknode, conf, updated_handler, args.filters, args.run_once)
 
     elif args.command == 'join':
         farmer.join(args.zknode, conf, args.common, args.host_id)

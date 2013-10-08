@@ -130,6 +130,7 @@ Usage for the `zkfarmer export` command:
                             filter out nodes which doesn't match supplied
                             predicates separeted by commas (ex:
                             enabled=0,replication_delay<10,!maintenance)
+      -x, --exit            exit after the first update from ZK
 
 Managing Farms
 --------------

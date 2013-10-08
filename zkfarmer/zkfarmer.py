@@ -32,10 +32,10 @@ class ZkFarmer(object):
         # Join the farm
         ZkFarmJoiner(self.zkconn, zknode, conf, common, host_id).loop(ignore_unknown_transitions=True)
 
-    def export(self, zknode, conf, updated_handler=None, filters=None):
+    def export(self, zknode, conf, updated_handler=None, filters=None, run_once=False):
         ZkFarmExporter(self.zkconn, zknode, conf,
                        updated_handler,
-                       filter_handler=create_filter(filters)).loop(ignore_unknown_transitions=True)
+                       filter_handler=create_filter(filters), run_once=run_once).loop(ignore_unknown_transitions=True)
 
     def list(self, zknode):
         try:
