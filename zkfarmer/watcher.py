@@ -219,6 +219,9 @@ class ZkFarmJoiner(ZkFarmWatcher):
         logger.debug("Using host_id %s" % host_id)
         self.node_path = "%s/%s" % (root_node_path, host_id)
         self.conf = conf
+        # Get the realpath of our file/directory in order to match our Observer event src_path.
+        # This is needed in case we have some symlinks in use.
+        self.conf.file_path = os.path.realpath(self.conf.file_path)
         self.host_id = host_id
 
         self.event("initial setup")
@@ -246,6 +249,7 @@ class ZkFarmJoiner(ZkFarmWatcher):
         path = self.conf.file_path
         if not os.path.isdir(path):
             path = os.path.dirname(os.path.realpath(path))
+        logger.info("Observer using path %s" % path)
         observer.schedule(self, path=path, recursive=True)
         observer.start()
 
@@ -309,6 +313,7 @@ class ZkFarmJoiner(ZkFarmWatcher):
 
     def dispatch(self, event):
         """A local change has occured"""
+        logger.info(event)
         if hasattr(event, "src_path") and event.src_path.startswith(self.conf.file_path) \
            or hasattr(event, "dst_path") and event.dst_path.startswith(self.conf.file_path) \
            or hasattr(event, "dest_path") and event.dest_path.startswith(self.conf.file_path):
